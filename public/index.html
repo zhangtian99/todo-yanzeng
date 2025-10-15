@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>马克斯todo密钥验证</title>
+    <title>密钥验证</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
         .page { display: none; }
         .page.active { display: block; animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        /* 新增：确保 modal 在最上层 */
         .modal { z-index: 50; }
     </style>
 </head>
@@ -19,7 +18,7 @@
     <div class="w-full max-w-sm mx-auto">
         <div id="page1" class="page active bg-white p-8 rounded-2xl shadow-lg text-center">
             <div class="mb-6">
-                 <h1 class="text-2xl font-bold text-gray-800">马克斯-todo密钥验证</h1>
+                 <h1 class="text-2xl font-bold text-gray-800">密钥验证</h1>
                  <p class="text-gray-500 text-sm mt-1">请输入您的密钥以继续</p>
             </div>
              <div class="space-y-4 text-left">
@@ -46,7 +45,6 @@
                 <p class="text-gray-500 text-sm mt-1">请继续完成后续步骤</p>
             </div>
             <div class="space-y-4">
-                <button id="getFeishu" class="w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600">创建飞书后台</button>
                 <button id="getShortcut" class="w-full bg-gray-800 text-white font-semibold py-2 px-4 rounded-lg hover:bg-black">获取苹果快捷指令</button>
             </div>
         </div>
@@ -92,10 +90,9 @@
             const failureMessage = document.getElementById('failureMessage');
             const backBtn = document.getElementById('backBtn');
 
-            const getFeishuBtn = document.getElementById('getFeishu');
+            // “getFeishuBtn” 变量已移除
             const getShortcutBtn = document.getElementById('getShortcut');
 
-            // --- 新增：获取弹窗和相关按钮 ---
             const qrModal = document.getElementById('qrModal');
             const closeModalBtn = document.getElementById('closeModalBtn');
             const contactBtns = document.querySelectorAll('.contact-btn');
@@ -143,18 +140,7 @@
                 showPage(page1);
             });
 
-            getFeishuBtn.addEventListener('click', async () => {
-                try {
-                    const link = await DataStore.getFeishuTemplateLink();
-                    if (link) {
-                        window.open(link, '_blank');
-                    } else {
-                        alert('管理员尚未配置飞书链接。');
-                    }
-                } catch(error) {
-                    alert(`获取飞书链接失败: ${error.message}`);
-                }
-            });
+            // “getFeishuBtn” 的事件监听已移除
 
             getShortcutBtn.addEventListener('click', async () => {
                 try {
@@ -169,17 +155,13 @@
                 }
             });
 
-            // --- 新增：弹窗控制逻辑 ---
             const showModal = () => qrModal.classList.remove('hidden');
             const hideModal = () => qrModal.classList.add('hidden');
 
-            // 为所有“联系客服”按钮添加事件监听
             contactBtns.forEach(btn => btn.addEventListener('click', showModal));
 
-            // 关闭按钮的事件监听
             closeModalBtn.addEventListener('click', hideModal);
 
-            // 点击弹窗背景（灰色区域）关闭弹窗
             qrModal.addEventListener('click', (event) => {
                 if (event.target === qrModal) {
                     hideModal();
