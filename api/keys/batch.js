@@ -20,17 +20,30 @@ export default async function handler(request, response) {
         return response.status(405).json({ success: false, message: '仅允许POST请求' });
     }
     try {
-        const { password } = request.body;
+        // --- ▼▼▼ 核心修改点 开始 ▼▼▼ ---
+
+        // 1. 从请求体中接收前端传来的 quantity 值
+        const { quantity, password } = request.body;
+        
         if (!checkAuth(password)) {
             return response.status(401).json({ success: false, message: '未经授权' });
         }
 
-        const quantity = 10; // 固定生成10个
+        // 2. 将前端传来的字符串数字转为整数，并增加安全校验
+        const numToGenerate = parseInt(quantity, 10);
+        if (isNaN(numToGenerate) || numToGenerate < 1 || numToGenerate > 100) {
+             return response.status(400).json({ success: false, message: '无效的数量，必须是1到100之间的数字。' });
+        }
+
+        // 3. 移除了 const quantity = 10; 这一行硬编码
+
+        // --- ▲▲▲ 核心修改点 结束 ▲▲▲ ---
+
         let added_count = 0;
         const generatedKeys = [];
 
-        // 循环生成10个密钥
-        for (let i = 0; i < quantity; i++) {
+        // 循环时使用经过校验的 numToGenerate 变量
+        for (let i = 0; i < numToGenerate; i++) {
             let newKey, keyExists = true, attempts = 0;
             // 为防止极小概率的重复，尝试最多5次
             while(keyExists && attempts < 5) {
