@@ -18,7 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (result.success) {
             sessionStorage.setItem('admin-token', password);
-            window.location.href = '/admin/';
+            // 👇👇👇 **核心修改点** 👇👇👇
+            // 将登录成功后跳转的地址从 '/admin/' 改为新的正确路径
+            window.location.href = '/dashboard-xyz789/';
         } else {
             loginStatus.textContent = result.message || '密码错误。';
             loginBtn.disabled = false;
