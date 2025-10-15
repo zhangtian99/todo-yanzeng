@@ -10,6 +10,8 @@
         .page { display: none; }
         .page.active { display: block; animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* 新增：确保 modal 在最上层 */
+        .modal { z-index: 50; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
@@ -28,6 +30,9 @@
                 </div>
                 <button id="validateBtn" class="w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 disabled:bg-gray-400">
                     验证密钥
+                </button>
+                <button class="contact-btn w-full bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">
+                    联系客服
                 </button>
             </div>
         </div>
@@ -56,9 +61,23 @@
             </div>
             <div class="space-y-4">
                 <button id="backBtn" class="w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600">返回重试</button>
+                <button class="contact-btn w-full bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">
+                    联系客服
+                </button>
             </div>
         </div>
     </div>
+
+    <div id="qrModal" class="modal fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center p-4 hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl text-center relative">
+            <button id="closeModalBtn" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h3 class="text-lg font-medium text-gray-900 mb-4">微信扫码联系客服</h3>
+            <img src="/wechat-qr-code.png" alt="客服微信二维码" class="w-48 h-48 mx-auto">
+        </div>
+    </div>
+
 
     <script src="/data-store.js"></script> 
     <script>
@@ -75,6 +94,12 @@
 
             const getFeishuBtn = document.getElementById('getFeishu');
             const getShortcutBtn = document.getElementById('getShortcut');
+
+            // --- 新增：获取弹窗和相关按钮 ---
+            const qrModal = document.getElementById('qrModal');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const contactBtns = document.querySelectorAll('.contact-btn');
+
 
             const showPage = (pageToShow) => {
                 [page1, page2, page3].forEach(p => p.classList.remove('active'));
@@ -141,6 +166,23 @@
                     }
                 } catch(error) {
                     alert(`获取快捷指令链接失败: ${error.message}`);
+                }
+            });
+
+            // --- 新增：弹窗控制逻辑 ---
+            const showModal = () => qrModal.classList.remove('hidden');
+            const hideModal = () => qrModal.classList.add('hidden');
+
+            // 为所有“联系客服”按钮添加事件监听
+            contactBtns.forEach(btn => btn.addEventListener('click', showModal));
+
+            // 关闭按钮的事件监听
+            closeModalBtn.addEventListener('click', hideModal);
+
+            // 点击弹窗背景（灰色区域）关闭弹窗
+            qrModal.addEventListener('click', (event) => {
+                if (event.target === qrModal) {
+                    hideModal();
                 }
             });
         });
