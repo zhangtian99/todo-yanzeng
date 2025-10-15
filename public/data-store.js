@@ -12,14 +12,14 @@ const DataStore = {
         return response.json();
     },
 
-    // --- 管理后台功能 ---
+    // --- 管理后台功能 (API路径已修改) ---
     async verifyAdminPassword(password) {
-        return this._handleApiResponse(await fetch("/api/admin/verify", {
+        return this._handleApiResponse(await fetch("/api/dashboard-xyz789/verify", { // <--- 已修改
             method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password })
         }), "密码验证失败");
     },
     async getStats(password) {
-        return this._handleApiResponse(await fetch(`/api/admin/stats?password=${encodeURIComponent(password)}`), "获取统计数据失败");
+        return this._handleApiResponse(await fetch(`/api/dashboard-xyz789/stats?password=${encodeURIComponent(password)}`), "获取统计数据失败"); // <--- 已修改
     },
     async getAllKeys(password) {
         return this._handleApiResponse(await fetch(`/api/keys?password=${encodeURIComponent(password)}`), "获取密钥列表失败");
@@ -30,7 +30,7 @@ const DataStore = {
         }), "批量生成密钥失败");
     },
     async resetKey(keyValue, password) {
-        return this._handleApiResponse(await fetch("/api/admin/reset-key", {
+        return this._handleApiResponse(await fetch("/api/dashboard-xyz789/reset-key", { // <--- 已修改
             method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key_value: keyValue, password })
         }), "重置密钥失败");
     },
@@ -40,32 +40,28 @@ const DataStore = {
         }), "删除密钥失败");
     },
     async getAdminConfig(password) {
-        return this._handleApiResponse(await fetch(`/api/admin/config?password=${encodeURIComponent(password)}`), "获取配置失败");
+        return this._handleApiResponse(await fetch(`/api/dashboard-xyz789/config?password=${encodeURIComponent(password)}`), "获取配置失败"); // <--- 已修改
     },
     async saveAdminConfig(linkType, url, password) {
-        return this._handleApiResponse(await fetch("/api/admin/config", {
+        return this._handleApiResponse(await fetch("/api/dashboard-xyz789/config", { // <--- 已修改
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ link_type: linkType, url: url, password: password })
         }), "保存配置失败");
     },
     async batchDeleteKeys(keyValues, password) {
-        return this._handleApiResponse(await fetch("/api/admin/batch-delete-keys", {
+        return this._handleApiResponse(await fetch("/api/dashboard-xyz789/batch-delete-keys", { // <--- 已修改
             method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key_values: keyValues, password })
         }), "批量删除密钥失败");
     },
 
-    // --- 用户前端需要的方法 ---
+    // --- 用户前端需要的方法 (这些不需要修改) ---
     async getConfig() {
         // 这个方法调用的是公开API，不需要密码
         const response = await fetch("/api/config"); 
         const data = await this._handleApiResponse(response, "获取配置信息失败");
         if (data.success) return data.data;
         throw new Error(data.message || "获取配置信息失败");
-    },
-    async getFeishuTemplateLink() {
-        const config = await this.getConfig();
-        return config.FEISHU_TEMPLATE_LINK;
     },
     async getShortcutLink() {
         const config = await this.getConfig();
