@@ -2,7 +2,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. 身份验证
     const password = sessionStorage.getItem('admin-token');
     if (!password) {
-        window.location.href = '/admin/login.html';
+        // 👇👇👇 **核心修改点** 👇👇👇
+        // 从旧的 '/admin/login.html' 改为新的正确路径
+        window.location.href = '/dashboard-xyz789/login.html'; 
         return;
     }
 
@@ -162,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 5. 事件监听器绑定 ---
     sidebarLinks.forEach(link => link.addEventListener('click', () => showPage(link.dataset.page)));
-    logoutBtn.addEventListener('click', () => { sessionStorage.removeItem('admin-token'); window.location.href = '/admin/login.html'; });
+    logoutBtn.addEventListener('click', () => { sessionStorage.removeItem('admin-token'); window.location.href = '/dashboard-xyz789/login.html'; });
 
     const setGeneratorStatus = (message, isError = false) => {
         generatorStatus.textContent = message;
