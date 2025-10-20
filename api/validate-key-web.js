@@ -1,48 +1,62 @@
+// 文件: /api/validate-key-web.js (Web 激活)
 import { kv } from '@vercel/kv';
 
 export default async function handler(request, response) {
     if (request.method !== 'POST') {
-        return response.status(405).json({ success: false, message: '仅允许POST请求' }); // Only POST requests allowed
+        return response.status(405).json({ success: false, message: '仅允许POST请求' });
     }
     try {
-        const { key } = request.body;
-        // Basic key format validation
-        if (!key || typeof key !== 'string' || !/^[A-Za-z0-9]+$/.test(key) || key.length > 64) {
-             return response.status(400).json({ success: false, message: '密钥格式无效' }); // Invalid key format
+        // Web激活只处理key
+        const { key } = request.body; 
+        
+        if (!key) {
+             return response.status(400).json({ success: false, message: '缺少密钥' });
         }
         
-        // 1. 在数据库中查找密钥
         const keyData = await kv.hgetall(`key:${key}`);
 
-        // 2. 检查密钥是否存在
         if (!keyData) {
-            return response.status(404).json({ success: false, message: '密钥无效或不存在' }); // Key invalid or does not exist
+            return response.status(404).json({ success: false, message: '密钥无效或不存在' });
         }
 
-        // 3. 检查密钥是否已被Web激活 (只能激活一次)
-        // 密钥状态现在可以是 'unused' (默认/管理端重置), 'web_used'
+        // 1. 检查密钥是否已被Web激活 (只能激活一次)
+        // 状态：'unused' (未激活) -> 'web_used' (Web已激活)
         if (keyData.validation_status === 'web_used') {
-            return response.status(409).json({ success: false, message: '此密钥已通过Web端激活，如需重置请联系管理员' }); // Key already web activated
+            return response.status(409).json({ success: false, message: '此密钥已通过Web端激活，如需重置请联系管理员' });
         }
         
-        // ==========================================================
-        // --- 核心修复点：使用扩展运算符确保保留所有原有数据 ---
-        // ==========================================================
-        // 4. 如果密钥有效且未被Web激活，则更新其状态为“web_used”
+        // 检查密钥是否为初始的 'unused' 状态
+        if (keyData.validation_status !== 'unused') {
+            // 捕获其他非预期的状态，避免激活。
+            return response.status(409).json({ success: false, message: `密钥状态为'${keyData.validation_status}'，无法通过Web激活。请联系管理员。` });
+        }
+
+        // 2. 激活流程：Web 端执行状态修改
         const validationTime = new Date().toISOString();
+        
         await kv.hset(`key:${key}`, {
-            ...keyData, // <-- 保留所有旧的 Hash 字段 (如 key_value, created_at)
+            ...keyData, // <<-- 保持所有原有数据 (例如 created_at)
+            validation_status: 'web_used', // 设为 Web 已激活
+            web_validated_time: validationTime,
+            // 确保 api_uses 被初始化 (如果它之前不存在的话)
+            api_uses: keyData.api_uses || '0', 
+            shortcut_configured_time: keyData.shortcut_configured_time || null,
+        });
+
+        const responseData = {
+            key_value: keyData.key_value,
             validation_status: 'web_used',
             web_validated_time: validationTime,
-            // 确保 api_uses 字段存在 (尽管它在 ...keyData 中可能已有，但此行可作为后备/显式覆盖)
-            api_uses: keyData.api_uses || '0' 
+        };
+
+        return response.status(200).json({ 
+            success: true, 
+            message: `密钥Web激活成功。`,
+            data: responseData
         });
-        
-        // 5. 返回成功响应
-        return response.status(200).json({ success: true, message: '密钥Web验证成功' }); // Key Web validation successful
 
     } catch (error) {
-        console.error('API Error in /api/validate-key-web:', error);
-        return response.status(500).json({ success: false, message: '服务器内部错误' }); // Internal server error
+        console.error('Web激活API出错:', error);
+        return response.status(500).json({ success: false, message: '服务器内部错误' });
     }
 }
