@@ -1,56 +1,79 @@
-// 文件: /api/validate-key-api.js (API/Shortcut 验证)
+// 文件: /api/validate.js (API/Shortcut 验证 - 兼容版本)
 import { kv } from '@vercel/kv';
 
 export default async function handler(request, response) {
     if (request.method !== 'POST') {
-        return response.status(405).json({ success: false, message: '仅允许POST请求' });
+        return response.status(405).json({ code: 'METHOD_NOT_ALLOWED', message: '仅允许POST请求' });
     }
     try {
-        const { key } = request.body;
-        // ... (密钥格式校验，这里简化)
+        const { key } = request.body; 
         
-        const keyData = await kv.hgetall(`key:${key}`);
+        if (!key) {
+             return response.status(400).json({ code: 'INVALID_INPUT', message: '缺少密钥' });
+        }
+        
         const keyName = `key:${key}`;
-
+        const keyData = await kv.hgetall(keyName);
+        
         if (!keyData) {
-            return response.status(404).json({ success: false, message: '密钥无效或不存在' });
+            return response.status(404).json({ code: 'KEY_NOT_FOUND', message: '密钥无效或不存在' });
         }
 
-        // 1. 【核心前置检查】：必须是 'web_used' 状态才能进行API验证
-        if (keyData.validation_status !== 'web_used') {
-            return response.status(403).json({ success: false, message: '密钥尚未通过Web端激活，请先在Web端完成激活' });
+        // 1. 检查试用密钥是否过期 (保持原逻辑)
+        if (keyData.key_type === 'trial' && keyData.expires_at && new Date() > new Date(keyData.expires_at)) {
+            return response.status(403).json({ code: 'KEY_EXPIRED', message: '试用密钥已过期，请购买永久密钥。' });
         }
         
-        // 2. 检查软件使用次数 (最多2次)
-        const apiUses = parseInt(keyData.api_uses || '0', 10);
-        const MAX_API_USES = 2; // 您可以根据需要修改此上限
+        // ==========================================================
+        // --- 核心兼容点 1：检查 Web 验证状态 (必须是已激活状态) ---
+        // ==========================================================
+        // 密钥可能被设置为 'used' 或 'web_used'，兼容两者。
+        const isActive = keyData.validation_status === 'used' || keyData.validation_status === 'web_used';
 
-        if (apiUses >= MAX_API_USES) {
-            return response.status(429).json({ success: false, message: `此密钥的软件验证次数已达上限 (${MAX_API_USES}次)` });
+        if (!isActive) {
+            return response.status(401).json({ code: 'NOT_ACTIVATED', message: '请先在Web页面完成激活。' });
+        }
+
+        // ==========================================================
+        // --- 核心兼容点 2：检查 API 验证次数限制 (兼容不同计数器名称) ---
+        // ==========================================================
+        // 优先使用 'api_checks' (原 validate.js)，其次使用 'api_uses' (其他文件)，默认 0。
+        const apiChecksKey = keyData.api_checks !== undefined ? 'api_checks' : 'api_uses';
+        const apiChecks = parseInt(keyData[apiChecksKey] || 0, 10);
+        const MAX_CHECKS = 2; // 最多验证 2 次
+        
+        if (apiChecks >= MAX_CHECKS) {
+            return response.status(403).json({ code: 'CHECK_LIMIT_EXCEEDED', message: `API 验证次数已达上限（${MAX_CHECKS}次）。` });
         }
         
-        // 3. 验证通过：增加使用次数并更新时间
-        const newApiUses = apiUses + 1;
+        // 3. 验证通过：递增计数器
+        const newApiChecks = apiChecks + 1;
         const validationTime = new Date().toISOString();
-
-        await kv.hset(keyName, {
-            ...keyData, // <<-- 保持所有原有数据
-            api_uses: newApiUses.toString(), // 递增使用次数
-            shortcut_configured_time: validationTime // 记录最后一次配置时间
+        
+        // 递增时，使用检测到的准确键名进行 HSET
+        await kv.hset(keyName, { 
+            ...keyData, // 保持所有原有数据
+            [apiChecksKey]: newApiChecks.toString(), // 使用兼容的键名进行递增
+            last_api_validated_time: validationTime
         });
+
+        const responseData = {
+            key_type: keyData.key_type || 'permanent',
+            expires_at: keyData.expires_at || null,
+            validation_status: keyData.validation_status,
+            user_id: keyData.user_id || null,
+            api_checks_remaining: MAX_CHECKS - newApiChecks,
+            api_checks_used: newApiChecks
+        };
 
         return response.status(200).json({ 
-            success: true, 
-            message: `API验证成功，当前使用次数: ${newApiUses}`,
-            data: {
-                key_value: keyData.key_value,
-                api_uses: newApiUses,
-                shortcut_configured_time: validationTime
-            }
+            code: 'VALIDATION_SUCCESS', 
+            message: `验证成功。这是第 ${newApiChecks} 次验证。`, 
+            data: responseData
         });
-
+        
     } catch (error) {
-        console.error('API验证API出错:', error);
-        return response.status(500).json({ success: false, message: '服务器内部错误' });
+        console.error('API 密钥验证出错:', error);
+        return response.status(500).json({ code: 'INTERNAL_SERVER_ERROR', message: '服务器内部错误' });
     }
 }
