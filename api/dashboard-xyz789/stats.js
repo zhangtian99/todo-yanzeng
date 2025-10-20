@@ -24,12 +24,12 @@ export default async function handler(request, response) {
             const allKeyData = await pipeline.exec();
             
             // ======================================================
-            // --- 修正点：修复了统计已激活密钥的逻辑 ---
+            // --- 修正点：修复了统计已激活密钥的逻辑，兼容 'web_used' 状态 ---
             // ======================================================
             // 3. 过滤并计算已激活(used)的密钥数量
             const usedKeysCount = allKeyData.filter(keyData => {
-                // 确保keyData存在并且它的validation_status属性为'used'
-                return keyData && keyData.validation_status === 'used';
+                // 确保keyData存在并且它的validation_status属性为'used' 或 'web_used'
+                return keyData && (keyData.validation_status === 'used' || keyData.validation_status === 'web_used');
             }).length;
             
             const stats = {

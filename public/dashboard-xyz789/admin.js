@@ -42,6 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectAllCheckbox = document.getElementById('selectAllCheckbox');
     const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
     const selectedCountSpan = document.getElementById('selectedCount');
+    
+    // --- 新增辅助函数：判断密钥是否处于激活状态 (兼容 'used' 和 'web_used') ---
+    const isKeyUsed = (status) => status === 'used' || status === 'web_used';
 
     // --- 4. 核心功能函数 ---
     const showLoading = (element, message = "...") => {
@@ -95,15 +98,17 @@ document.addEventListener('DOMContentLoaded', () => {
              return;
         }
         keysForCurrentPage.forEach(key => {
+            // --- 核心修复点：使用 isKeyUsed 函数判断激活状态 ---
+            const isUsed = isKeyUsed(key.validation_status); 
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="p-4"><input type="checkbox" class="key-checkbox h-4 w-4 text-blue-600" data-key-value="${key.key_value}"></td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-800">${key.key_value}</td>
-                <td class="px-6 py-4"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${key.validation_status === 'used' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${key.validation_status === 'used' ? '已激活' : '未激活'}</span></td>
+                <td class="px-6 py-4"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${isUsed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${isUsed ? '已激活' : '未激活'}</span></td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(key.created_at).toLocaleString()}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex items-center gap-4">
                     <button title="复制" data-key-value="${key.key_value}" class="copy-btn text-gray-500 hover:text-blue-600">复制</button>
-                    <button title="重置" data-key-value="${key.key_value}" class="reset-btn text-gray-500 hover:text-blue-600 disabled:text-gray-300" ${key.validation_status !== 'used' ? 'disabled' : ''}>重置</button>
+                    <button title="重置" data-key-value="${key.key_value}" class="reset-btn text-gray-500 hover:text-blue-600 disabled:text-gray-300" ${!isUsed ? 'disabled' : ''}>重置</button>
                     <button title="删除" data-key-value="${key.key_value}" class="delete-btn text-gray-500 hover:text-red-600">删除</button>
                 </td>
             `;
@@ -214,6 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
             navigator.clipboard.writeText(keyValue).then(() => alert('密钥已复制!'));
         }
         if (target.classList.contains('reset-btn')) {
+            // 重置按钮的确认和调用逻辑不变
             if (confirm(`您确定要重置密钥 "${keyValue}" 吗？`)) {
                 const result = await DataStore.resetKey(keyValue, password);
                 if (result.success) loadViewPage(); else alert(`重置失败: ${result.message}`);
