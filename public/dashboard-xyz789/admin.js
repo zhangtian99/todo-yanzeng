@@ -1,9 +1,10 @@
+// 文件: admin.js
+
 document.addEventListener('DOMContentLoaded', () => {
     // 1. 身份验证
     const password = sessionStorage.getItem('admin-token');
     if (!password) {
-        // 👇👇👇 **核心修改点** 👇👇👇
-        // 从旧的 '/admin/login.html' 改为新的正确路径
+        // ... (跳转逻辑)
         window.location.href = '/dashboard-xyz789/login.html'; 
         return;
     }
@@ -13,7 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPage = 1;
     const itemsPerPage = 10;
     
-    // --- 新增辅助函数：判断密钥是否处于激活状态 (兼容 'used' 和 'web_used') ---
+    // ==========================================================
+    // --- 逻辑重写点：新增状态判断辅助函数，兼容 'used' 和 'web_used' ---
+    // ==========================================================
     const isKeyUsed = (status) => status === 'used' || status === 'web_used';
 
     // --- 3. DOM元素获取 ---
@@ -98,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
              return;
         }
         keysForCurrentPage.forEach(key => {
-            // --- 核心修复点：使用 isKeyUsed 函数判断激活状态 ---
+            // --- 核心逻辑：使用 isKeyUsed 函数判断激活状态 ---
             const isUsed = isKeyUsed(key.validation_status); 
             const tr = document.createElement('tr');
             tr.innerHTML = `
