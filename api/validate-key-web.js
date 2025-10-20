@@ -20,17 +20,21 @@ export default async function handler(request, response) {
         }
 
         // 3. 检查密钥是否已被Web激活 (只能激活一次)
-        // 密钥状态现在可以是 'unvalidated' (默认/管理端重置), 'web_used'
+        // 密钥状态现在可以是 'unused' (默认/管理端重置), 'web_used'
         if (keyData.validation_status === 'web_used') {
             return response.status(409).json({ success: false, message: '此密钥已通过Web端激活，如需重置请联系管理员' }); // Key already web activated
         }
         
+        // ==========================================================
+        // --- 核心修复点：使用扩展运算符确保保留所有原有数据 ---
+        // ==========================================================
         // 4. 如果密钥有效且未被Web激活，则更新其状态为“web_used”
         const validationTime = new Date().toISOString();
         await kv.hset(`key:${key}`, {
+            ...keyData, // <-- 保留所有旧的 Hash 字段 (如 key_value, created_at)
             validation_status: 'web_used',
             web_validated_time: validationTime,
-            // 确保 api_uses 字段存在, 默认为 '0'
+            // 确保 api_uses 字段存在 (尽管它在 ...keyData 中可能已有，但此行可作为后备/显式覆盖)
             api_uses: keyData.api_uses || '0' 
         });
         
