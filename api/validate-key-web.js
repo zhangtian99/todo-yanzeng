@@ -19,7 +19,7 @@ export default async function handler(request, response) {
             return response.status(404).json({ success: false, message: '密钥无效或不存在' }); // Key invalid or does not exist
         }
 
-        // 3. 检查密钥是否已被Web激活 (新逻辑)
+        // 3. 检查密钥是否已被Web激活 (只能激活一次)
         // 密钥状态现在可以是 'unvalidated' (默认/管理端重置), 'web_used'
         if (keyData.validation_status === 'web_used') {
             return response.status(409).json({ success: false, message: '此密钥已通过Web端激活，如需重置请联系管理员' }); // Key already web activated

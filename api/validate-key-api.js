@@ -16,7 +16,7 @@ export default async function handler(request, response) {
             return response.status(404).json({ success: false, message: '密钥无效或不存在' });
         }
 
-        // 1. 检查密钥是否已被Web激活 (新的前置条件)
+        // 1. 检查密钥是否已被Web激活 (前置条件：必须是 'web_used' 状态)
         // 只有当 validation_status 是 'web_used' 时，API 验证才允许进行。
         if (keyData.validation_status !== 'web_used') {
             return response.status(403).json({ success: false, message: '密钥尚未通过Web端激活，请先在Web端完成激活' });
