@@ -4,7 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. 身份验证
     const password = sessionStorage.getItem('admin-token');
     if (!password) {
-        // ... (跳转逻辑)
+        // 👇👇👇 **核心修改点** 👇👇👇
+        // 从旧的 '/admin/login.html' 改为新的正确路径
         window.location.href = '/dashboard-xyz789/login.html'; 
         return;
     }
@@ -15,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const itemsPerPage = 10;
     
     // ==========================================================
-    // --- 逻辑重写点：新增状态判断辅助函数，兼容 'used' 和 'web_used' ---
+    // --- 核心修复：新增状态判断辅助函数，兼容 'used' 和 'web_used' ---
     // ==========================================================
     const isKeyUsed = (status) => status === 'used' || status === 'web_used';
 
