@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let allKeysCache = [];
     let currentPage = 1;
     const itemsPerPage = 10;
+    
+    // --- 新增辅助函数：判断密钥是否处于激活状态 (兼容 'used' 和 'web_used') ---
+    const isKeyUsed = (status) => status === 'used' || status === 'web_used';
 
     // --- 3. DOM元素获取 ---
     const pages = { home: document.getElementById('page-home'), create: document.getElementById('page-create'), view: document.getElementById('page-view'), config: document.getElementById('page-config') };
@@ -42,9 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectAllCheckbox = document.getElementById('selectAllCheckbox');
     const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
     const selectedCountSpan = document.getElementById('selectedCount');
-    
-    // --- 新增辅助函数：判断密钥是否处于激活状态 (兼容 'used' 和 'web_used') ---
-    const isKeyUsed = (status) => status === 'used' || status === 'web_used';
 
     // --- 4. 核心功能函数 ---
     const showLoading = (element, message = "...") => {
@@ -219,7 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
             navigator.clipboard.writeText(keyValue).then(() => alert('密钥已复制!'));
         }
         if (target.classList.contains('reset-btn')) {
-            // 重置按钮的确认和调用逻辑不变
             if (confirm(`您确定要重置密钥 "${keyValue}" 吗？`)) {
                 const result = await DataStore.resetKey(keyValue, password);
                 if (result.success) loadViewPage(); else alert(`重置失败: ${result.message}`);
